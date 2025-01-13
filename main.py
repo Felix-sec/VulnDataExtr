@@ -1,22 +1,44 @@
 # -*- coding:utf-8 -*-
 import json
 import re
+from pathlib import Path
 
+def extract_json_from_html(input_file, output_file):
+    """
+    从HTML文件中提取JSON数据并保存
+    
+    Args:
+        input_file (str): 输入HTML文件路径
+        output_file (str): 输出JSON文件路径
+        
+    Returns:
+        bool: 是否成功提取
+    """
+    try:
+        with open(input_file, encoding='utf8') as f:
+            file_content = f.read()
 
-def htmlToJson():
-    with open('index.html', encoding='utf8') as f:
-        fileContent = f.read()
-
-    patList = re.findall(r'<script>window.data = (.*?);</script><title></title>', fileContent)
-    data_Json = json.loads(patList[0])
-    print(type(data_Json))
-    print(data_Json)
-    return data_Json
+        pat_list = re.findall(r'<script>window.data = (.*?);</script>', file_content)
+        
+        if not pat_list:
+            return False
+            
+        data_json = json.loads(pat_list[0])
+        
+        with open(output_file, 'w', encoding='utf8') as f:
+            json.dump(data_json, f, ensure_ascii=False, indent=4)
+            
+        return True
+        
+    except Exception as e:
+        raise Exception(f"处理文件时出错: {str(e)}")
 
 if __name__ == "__main__":
-    data = htmlToJson()
-    with open('data.json', 'w', encoding='utf8') as file:
-        # 使用json.dump()方法将字典转换为json并写入文件
-        # ensure_ascii=False 保证非ASCII字符以原始形式保存
-        # indent=4 设置缩进为4个空格，使输出更加易读
-        json.dump(data, file, ensure_ascii=False, indent=4)
+    # 命令行方式运行时的代码
+    input_file = "index.html"
+    output_file = "data.json"
+    
+    if extract_json_from_html(input_file, output_file):
+        print(f"JSON数据已保存到: {output_file}")
+    else:
+        print("未找到匹配的JSON数据！")
