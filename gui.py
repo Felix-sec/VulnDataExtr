@@ -39,29 +39,22 @@ class JsonExtractorGUI:
         self.save_btn = tk.Button(self.output_frame, text="浏览", command=self.browse_output)
         self.save_btn.pack(side="left", padx=5)
         
+        # 将提取JSON按钮移到输出文件框中
+        self.extract_btn = tk.Button(self.output_frame, text="提取JSON", 
+                                   command=self.extract_json)
+        self.extract_btn.pack(side="left", padx=5)
+        
         # 添加关键词管理器
         self.keyword_manager = KeywordManager()
         
-        # 添加按钮框架
-        self.button_frame = tk.Frame(root)
-        self.button_frame.pack(pady=5)
-        
-        # 提取按钮移到按钮框架
-        self.extract_btn = tk.Button(self.button_frame, text="提取JSON", command=self.extract_json)
-        self.extract_btn.pack(side="left", padx=5)
-        
-        # 添加漏洞分类按钮
-        self.vuln_btn = tk.Button(self.button_frame, text="漏洞类型分类", command=self.export_vuln_types)
-        self.vuln_btn.pack(side="left", padx=5)
-        
-        # 添加关键词管理按钮
-        self.keyword_btn = tk.Button(self.button_frame, text="关键词管理", command=self.show_keyword_dialog)
-        self.keyword_btn.pack(side="left", padx=5)
+        # 创建漏洞分类框架
+        vuln_frame = tk.LabelFrame(root, text="漏洞类型分类", padx=5, pady=5)
+        vuln_frame.pack(fill="x", padx=10, pady=5)
         
         # 添加匹配模式选择
         self.match_mode = tk.StringVar(value="both")
-        match_frame = tk.LabelFrame(root, text="匹配模式", padx=5, pady=5)
-        match_frame.pack(fill="x", padx=10, pady=5)
+        match_label = tk.Label(vuln_frame, text="匹配模式:")
+        match_label.pack(side="left", padx=5)
         
         modes = [
             ("精准匹配", "exact"),
@@ -70,8 +63,18 @@ class JsonExtractorGUI:
         ]
         
         for text, mode in modes:
-            tk.Radiobutton(match_frame, text=text, variable=self.match_mode, 
+            tk.Radiobutton(vuln_frame, text=text, variable=self.match_mode, 
                           value=mode).pack(side="left", padx=5)
+        
+        # 添加关键词管理按钮
+        self.keyword_btn = tk.Button(vuln_frame, text="关键词管理", 
+                                   command=self.show_keyword_dialog)
+        self.keyword_btn.pack(side="left", padx=15)
+        
+        # 添加导出按钮
+        self.vuln_btn = tk.Button(vuln_frame, text="导出分类", 
+                                 command=self.export_vuln_types)
+        self.vuln_btn.pack(side="left", padx=5)
         
         # 日志框
         self.log_frame = tk.LabelFrame(root, text="运行日志", padx=10, pady=5)
@@ -189,6 +192,20 @@ class JsonExtractorGUI:
     
     def export_vuln_types(self):
         try:
+            # 先让用户选择保存位置
+            output_excel = filedialog.asksaveasfilename(
+                title="保存漏洞分类Excel",
+                defaultextension=".xlsx",
+                initialfile="漏洞类型分类.xlsx",
+                filetypes=[
+                    ("Excel文件", "*.xlsx"),
+                    ("所有文件", "*.*")
+                ]
+            )
+            
+            if not output_excel:  # 用户取消选择
+                return
+            
             # 读取JSON文件
             with open(self.output_path.get(), 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -226,7 +243,6 @@ class JsonExtractorGUI:
             
             # 创建DataFrame并导出到Excel
             df = pd.DataFrame(excel_data)
-            output_excel = Path(self.output_path.get()).with_suffix('.xlsx')
             df.to_excel(output_excel, index=False)
             
             self.log_message(f"漏洞类型分类已导出到: {output_excel}", "SUCCESS")

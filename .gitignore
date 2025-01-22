@@ -3,6 +3,8 @@
 /dist/
 /venv/
 /.idea/
+/__pycache__/
+/.idea/
 
 # 忽略日志文件
 *.log
@@ -11,7 +13,9 @@
 *说明*.txt
 
 # 忽略源文件
-*.html
+index.html
 
 # 忽略测试输出的文件
-*.json
+data.json
+index.json
+*.xlsx
