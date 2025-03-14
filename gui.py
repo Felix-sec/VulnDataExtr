@@ -1,20 +1,34 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 import json
 import re
 from pathlib import Path
 import pandas as pd
 from keyword_manager import KeywordManager
 from keyword_dialog import KeywordDialog
+from tkinterdnd2 import TkinterDnD, DND_FILES
 
 class JsonExtractorGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("HTML JSON提取器")
+        self.root.title("漏扫数据分析工具 - By Felix")
         self.root.geometry("800x600")
         
+        # 创建标签页
+        self.notebook = ttk.Notebook(root)
+        self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # 创建漏洞分类标签页
+        self.vuln_class_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.vuln_class_frame, text="漏洞类型分类")
+        
+        # 创建IP提取标签页
+        self.ip_extract_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.ip_extract_frame, text="漏洞明细表格IP提取")
+        
+        # 在漏洞分类标签页中添加组件
         # 输入文件框
-        self.input_frame = tk.LabelFrame(root, text="输入HTML文件", padx=10, pady=5)
+        self.input_frame = tk.LabelFrame(self.vuln_class_frame, text="输入HTML文件", padx=10, pady=5)
         self.input_frame.pack(fill="x", padx=10, pady=5)
         
         self.input_path = tk.StringVar()
@@ -29,7 +43,7 @@ class JsonExtractorGUI:
         self.drop_label.pack(side="left", padx=5)
         
         # 输出文件框
-        self.output_frame = tk.LabelFrame(root, text="输出JSON文件", padx=10, pady=5)
+        self.output_frame = tk.LabelFrame(self.vuln_class_frame, text="输出JSON文件", padx=10, pady=5)
         self.output_frame.pack(fill="x", padx=10, pady=5)
         
         self.output_path = tk.StringVar()
@@ -48,7 +62,7 @@ class JsonExtractorGUI:
         self.keyword_manager = KeywordManager()
         
         # 创建漏洞分类框架
-        vuln_frame = tk.LabelFrame(root, text="漏洞类型分类", padx=5, pady=5)
+        vuln_frame = tk.LabelFrame(self.vuln_class_frame, text="漏洞类型分类", padx=5, pady=5)
         vuln_frame.pack(fill="x", padx=10, pady=5)
         
         # 添加匹配模式选择
@@ -77,7 +91,7 @@ class JsonExtractorGUI:
         self.vuln_btn.pack(side="left", padx=5)
         
         # 日志框
-        self.log_frame = tk.LabelFrame(root, text="运行日志", padx=10, pady=5)
+        self.log_frame = tk.LabelFrame(self.vuln_class_frame, text="运行日志", padx=10, pady=5)
         self.log_frame.pack(fill="both", expand=True, padx=10, pady=5)
         
         # 创建文本框和滚动条
@@ -91,12 +105,15 @@ class JsonExtractorGUI:
         
         # 状态显示
         self.status_var = tk.StringVar()
-        self.status_label = tk.Label(root, textvariable=self.status_var)
+        self.status_label = tk.Label(self.vuln_class_frame, textvariable=self.status_var)
         self.status_label.pack(pady=5)
         
         # 绑定拖放事件
         self.root.drop_target_register(DND_FILES)
         self.root.dnd_bind('<<Drop>>', self.handle_drop)
+        
+        # 初始化IP提取标签页
+        self.init_ip_extract_tab()
 
     def log_message(self, message, level="INFO"):
         """添加日志消息到日志框"""
@@ -123,6 +140,13 @@ class JsonExtractorGUI:
         if filename:
             self.output_path.set(filename)
 
+    def browse_ip_file(self):
+        filename = filedialog.askopenfilename(
+            filetypes=[("Excel文件", "*.xlsx"), ("所有文件", "*.*")]
+        )
+        if filename:
+            self.ip_file_path_var.set(filename)
+
     def handle_drop(self, event):
         file_path = event.data
         self.log_message(f"收到拖放文件: {file_path}")
@@ -137,6 +161,20 @@ class JsonExtractorGUI:
             self.output_path.set(str(output_path))
             self.log_message(f"已设置输入文件: {file_path}")
             self.log_message(f"已设置输出文件: {output_path}")
+        else:
+            self.log_message(f"无效的文件类型: {file_path}", "ERROR")
+
+    def handle_ip_file_drop(self, event):
+        file_path = event.data
+        self.log_message(f"收到拖放文件: {file_path}")
+        
+        # 移除花括号并转换为Path对象
+        file_path = Path(file_path.strip('{}'))
+        
+        # 检查文件扩展名（不区分大小写）
+        if file_path.suffix.lower() == '.xlsx':
+            self.ip_file_path_var.set(str(file_path))
+            self.log_message(f"已设置IP提取Excel文件: {file_path}")
         else:
             self.log_message(f"无效的文件类型: {file_path}", "ERROR")
 
@@ -250,10 +288,141 @@ class JsonExtractorGUI:
         except Exception as e:
             self.log_message(f"导出漏洞类型分类时出错: {str(e)}", "ERROR")
 
+    def init_ip_extract_tab(self):
+        # 添加说明文字
+        description = "本功能旨在漏洞明细Excel表格按漏洞等级、漏洞类型进行提取IP地址，支持IP去重，请先将漏洞明细Excel表格进行漏洞分类后再使用本功能！"
+        desc_label = tk.Label(self.ip_extract_frame, text=description, wraplength=700, justify="left")
+        desc_label.pack(fill="x", padx=10, pady=10)
+        
+        # 文件选择框架
+        file_frame = tk.LabelFrame(self.ip_extract_frame, text="选择Excel文件", padx=10, pady=5)
+        file_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.ip_file_path_var = tk.StringVar()
+        self.ip_file_entry = tk.Entry(file_frame, textvariable=self.ip_file_path_var, width=80)
+        self.ip_file_entry.pack(side="left", padx=5)
+        
+        browse_btn = tk.Button(file_frame, text="浏览", command=self.browse_ip_file)
+        browse_btn.pack(side="left", padx=5)
+        
+        # Excel类型选择框架
+        type_frame = tk.LabelFrame(self.ip_extract_frame, text="Excel类型", padx=10, pady=5)
+        type_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.excel_type_var = tk.StringVar(value="complex")
+        simple_radio = tk.Radiobutton(type_frame, text="简单表格(一列一个字段)", 
+                                     variable=self.excel_type_var, value="simple")
+        simple_radio.pack(side="left", padx=5)
+        complex_radio = tk.Radiobutton(type_frame, text="复杂表格(混合布局字段)", 
+                                      variable=self.excel_type_var, value="complex")
+        complex_radio.pack(side="left", padx=5)
+        
+        # 去重选项
+        self.ip_deduplicate_var = tk.BooleanVar()
+        dedup_check = tk.Checkbutton(self.ip_extract_frame, text="去重IP地址", 
+                                   variable=self.ip_deduplicate_var)
+        dedup_check.pack(pady=10)
+        
+        # 提取按钮
+        extract_btn = tk.Button(self.ip_extract_frame, text="提取IP地址", 
+                              command=self.extract_ip_addresses)
+        extract_btn.pack(pady=10)
+        
+        # IP提取状态标签
+        self.ip_status_var = tk.StringVar()
+        ip_status_label = tk.Label(self.ip_extract_frame, 
+                                 textvariable=self.ip_status_var, fg="green")
+        ip_status_label.pack(pady=5)
+        
+        # 文件拖放支持
+        self.ip_file_entry.drop_target_register(DND_FILES)
+        self.ip_file_entry.dnd_bind('<<Drop>>', self.handle_ip_file_drop)
+
+    def extract_ip_addresses(self):
+        file_path = self.ip_file_path_var.get()
+        if not file_path:
+            messagebox.showwarning("警告", "请选择一个有效的Excel文件。")
+            return
+
+        # 让用户选择导出目录
+        output_dir = filedialog.askdirectory(title="选择IP地址文件保存目录")
+        if not output_dir:  # 用户取消选择
+            return
+
+        try:
+            df = pd.read_excel(file_path)
+            
+            # 初始化文件句柄字典和IP集合字典
+            file_handles = {}
+            ip_sets = {}
+            
+            if self.excel_type_var.get() == "simple":
+                # 处理简单表格格式
+                for _, row in df.iterrows():
+                    risk_level = str(row['漏洞等级']).strip()
+                    category = str(row['类型']).strip()
+                    ip_addresses = str(row['受影响主机']).strip()
+                    
+                    if ip_addresses and ip_addresses != 'nan':
+                        # 构建完整的文件路径
+                        filename = Path(output_dir) / f"{risk_level}-{category}.txt"
+                        
+                        # 如果文件句柄不存在，则创建新的文件句柄和IP集合
+                        if filename not in file_handles:
+                            file_handles[filename] = open(filename, 'w', encoding='utf-8')
+                            if self.ip_deduplicate_var.get():
+                                ip_sets[filename] = set()
+                        
+                        # 如果有多个IP，使用";"分隔
+                        for ip in ip_addresses.split(';'):
+                            ip = ip.strip()
+                            if ip:
+                                if self.ip_deduplicate_var.get():
+                                    if ip not in ip_sets[filename]:
+                                        file_handles[filename].write(ip + '\n')
+                                        ip_sets[filename].add(ip)
+                                else:
+                                    file_handles[filename].write(ip + '\n')
+            else:
+                # 处理复杂表格格式
+                for i in range(1, len(df), 4):
+                    if i + 1 < len(df):
+                        risk_level = str(df.iloc[i-1, 2]).strip()
+                        category = str(df.iloc[i-1, 4]).strip()
+                        
+                        # 构建完整的文件路径
+                        filename = Path(output_dir) / f"{risk_level}-{category}.txt"
+                        
+                        # 如果文件句柄不存在，则创建新的文件句柄和IP集合
+                        if filename not in file_handles:
+                            file_handles[filename] = open(filename, 'w', encoding='utf-8')
+                            if self.ip_deduplicate_var.get():
+                                ip_sets[filename] = set()
+                        
+                        ip_addresses = str(df.iloc[i, 3]).strip()
+                        if ip_addresses and ip_addresses != 'nan':
+                            # 如果有多个IP，使用";"分隔
+                            for ip in ip_addresses.split(';'):
+                                ip = ip.strip()
+                                if ip:
+                                    if self.ip_deduplicate_var.get():
+                                        if ip not in ip_sets[filename]:
+                                            file_handles[filename].write(ip + '\n')
+                                            ip_sets[filename].add(ip)
+                                    else:
+                                        file_handles[filename].write(ip + '\n')
+            
+            # 确保所有文件都被正确关闭
+            for fh in file_handles.values():
+                fh.close()
+            
+            self.ip_status_var.set(f"IP地址已成功提取并保存到目录: {output_dir}")
+            messagebox.showinfo("完成", f"IP地址已成功提取并保存到目录: {output_dir}")
+        except Exception as e:
+            self.ip_status_var.set(f"发生错误: {str(e)}")
+            messagebox.showerror("错误", f"发生错误: {str(e)}")
+
 if __name__ == "__main__":
-    # 需要安装tkinterdnd2包来支持拖放功能
-    from tkinterdnd2 import *
-    
     root = TkinterDnD.Tk()
     app = JsonExtractorGUI(root)
-    root.mainloop() 
+    root.mainloop()
