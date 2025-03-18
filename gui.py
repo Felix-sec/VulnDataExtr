@@ -14,12 +14,24 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 import time
+import requests
+from packaging import version
 
 class JsonExtractorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("漏扫数据分析工具 v1.0.1 - By Felix")
         self.root.geometry("800x600")
+        
+        # 创建菜单栏
+        self.menubar = tk.Menu(self.root)
+        self.root.config(menu=self.menubar)
+        
+        # 创建帮助菜单
+        self.help_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="帮助", menu=self.help_menu)
+        self.help_menu.add_command(label="关于", command=self.show_about)
+        self.help_menu.add_command(label="检查更新", command=self.check_update)
         
         # 创建标签页
         self.notebook = ttk.Notebook(root)
@@ -1097,6 +1109,30 @@ class JsonExtractorGUI:
         except Exception as e:
             self.lvmeng_log(f"处理旧版绿盟漏扫结果时出错: {str(e)}", "ERROR")
             raise
+
+    def show_about(self):
+        about_text = "漏扫数据分析工具 v1.0.1\n\n"
+        about_text += "作者: Felix\n"
+        about_text += "开源地址: https://github.com/Felix-sec/VulnDataAnalyzer"
+        messagebox.showinfo("关于", about_text)
+    
+    def check_update(self):
+        try:
+            # 获取Github最新release版本
+            api_url = "https://api.github.com/repos/Felix-sec/VulnDataAnalyzer/releases/latest"
+            response = requests.get(api_url)
+            response.raise_for_status()
+            latest_version = response.json()["tag_name"].strip("v")
+            current_version = "1.0.1"
+            
+            if version.parse(latest_version) > version.parse(current_version):
+                update_text = f"发现新版本: v{latest_version}\n当前版本: v{current_version}\n\n"
+                update_text += "请访问项目地址下载最新版本：\nhttps://github.com/Felix-sec/VulnDataAnalyzer/releases"
+                messagebox.showinfo("检查更新", update_text)
+            else:
+                messagebox.showinfo("检查更新", "当前已是最新版本！")
+        except Exception as e:
+            messagebox.showerror("检查更新", f"检查更新失败：{str(e)}")
 
 if __name__ == "__main__":
     root = TkinterDnD.Tk()

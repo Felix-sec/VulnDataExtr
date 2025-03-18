@@ -5,6 +5,8 @@
 /.idea/
 /__pycache__/
 /.idea/
+/upx-5.0.0-win64/
+/VulnDataAnalyzer_*/
 
 # 忽略日志文件
 *.log
@@ -13,10 +15,16 @@
 *说明*.txt
 
 # 忽略源文件
-index.html
+*.html
 
 # 忽略测试输出的文件
 data.json
 index.json
 *.xlsx
 *.bak
+*.zip
+build.py
+
+# 忽略图片
+*.png
+*.ico
