@@ -5,7 +5,7 @@ VulnDataExtr是一款基于绿盟漏扫系统漏扫结果的数据提取工具�
 ![](https://img.shields.io/badge/Windows-10-brightgreen)  ![](https://img.shields.io/badge/Python-3.9+-brightgreen)
 
 ## 功能支持清单
-|功能 | 支持旧版 | 支持新版(v6.0+) |
+|功能 | 支持旧版 | 支持新版 |
 | :------------: | :------------: | :------------: |
 |漏洞类型分类 | :black_square_button: | :white_check_mark: |
 | 明细表格IP提取 | :white_check_mark: | :white_check_mark: |

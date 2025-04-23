@@ -6,7 +6,8 @@
 /__pycache__/
 /.idea/
 /upx-5.0.0-win64/
-/VulnDataAnalyzer_*/
+/VulnDataExtr_*/
+*.spec
 
 # 忽略日志文件
 *.log
